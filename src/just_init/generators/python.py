@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.resources
 import keyword
 import re
+import os
 import subprocess
 import tempfile
 from collections.abc import Callable
@@ -43,7 +44,9 @@ def bootstrap_python_project(
     )
     try:
         for command in commands:
-            subprocess.run(command, cwd=project_directory, check=True)
+            env = os.environ.copy()
+            env.pop("VIRTUAL_ENV", None)
+            subprocess.run(command, cwd=project_directory, check=True, env=env)
     except FileNotFoundError as error:
         raise RuntimeError(
             f"{error.filename or 'Required command'} is required to generate a Python project."

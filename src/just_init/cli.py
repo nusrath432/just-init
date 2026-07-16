@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-
+from email_validator import EmailNotValidError, validate_email
 from just_init.generators import GENERATORS
 from just_init.generators.base import ProjectContext
 
@@ -20,6 +20,22 @@ def resolve_value(value: str, label: str) -> str:
         if resolved:
             return resolved
     raise ValueError(f"{label} is required. Supply the matching command option.")
+
+
+def resolve_email(value: str) -> str:
+    """Resolve and validate the author's email."""
+    while True:
+        email = resolve_value(value, "Author email")
+
+        try:
+            validate_email(email, check_deliverability=False)
+            return email
+        except EmailNotValidError as error:
+            if not sys.stdin.isatty():
+                raise ValueError(f"Invalid email: {error}") from None
+
+            print(f"Invalid email: {error}")
+            value = ""
 
 
 def parse_args() -> argparse.Namespace:
@@ -44,9 +60,10 @@ def main() -> int:
             project_name=args.project_name,
             output_directory=args.output_dir,
             author=resolve_value(args.author, "Author name"),
-            email=resolve_value(args.email, "Author email"),
+            email=resolve_email(args.email),
             github_username=resolve_value(
-                args.github_username, "GitHub username or organization"
+                args.github_username,
+                "GitHub username or organization",
             ),
         )
         project_directory = GENERATORS[args.language].generate(context)
