@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
 
 
 @dataclass(frozen=True)
@@ -16,12 +15,3 @@ class ProjectContext:
     author: str
     email: str
     github_username: str
-
-
-class ProjectGenerator(Protocol):
-    """A generator that creates one language-specific project."""
-
-    language: str
-
-    def generate(self, context: ProjectContext) -> Path:
-        """Generate a project and return its directory."""

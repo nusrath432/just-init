@@ -1,8 +1,0 @@
-recursive-include src/just_init/templates *
-include src/just_init/templates/python/.gitignore
-include src/just_init/templates/python/.pre-commit-config.yaml
-include src/just_init/templates/python/.python-version
-include src/just_init/templates/python/.release-please-manifest.json
-include src/just_init/templates/python/.editorconfig
-recursive-include src/just_init/templates/python/.github *
-recursive-include src/just_init/templates/python/.vscode *

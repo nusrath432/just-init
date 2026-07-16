@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import importlib.resources
 import keyword
-import re
 import os
+import re
+import shutil
 import subprocess
 import tempfile
 from collections.abc import Callable
-from importlib.resources.abc import Traversable
 from pathlib import Path
 
 from just_init.generators.base import ProjectContext
@@ -21,19 +21,11 @@ def bootstrap_python_project(
     project_directory: Path,
     context: ProjectContext,
 ) -> None:
-    """Initialize Git, install tooling, and verify a generated Python project."""
+    """Initialize a generated project with a minimal first commit."""
     commands = (
         ["git", "init", "--initial-branch=main"],
         ["git", "config", "user.name", context.author],
         ["git", "config", "user.email", context.email],
-        ["uv", "lock"],
-        ["uv", "sync", "--locked", "--all-groups"],
-        ["uv", "run", "pre-commit", "install", "--install-hooks"],
-        ["uv", "run", "pre-commit", "run", "--all-files"],
-        ["uv", "run", "ruff", "format", "--check", "."],
-        ["uv", "run", "ruff", "check", "."],
-        ["uv", "run", "pyright"],
-        ["uv", "run", "pytest", "--cov"],
         ["git", "add", "--all"],
         [
             "git",
@@ -101,6 +93,7 @@ class PythonProjectGenerator:
             (staged_project / "src" / "my_project").rename(
                 staged_project / "src" / module_name
             )
+            self._prune_to_minimal(staged_project, module_name)
             self._bootstrap_runner(staged_project, context)
             staged_project.replace(target)
 
@@ -125,20 +118,22 @@ class PythonProjectGenerator:
 
     @staticmethod
     def _copy_template(destination: Path) -> None:
-        template = importlib.resources.files("just_init").joinpath(
-            "templates", "python"
-        )
-
-        def copy_tree(source: Traversable, target: Path) -> None:
-            target.mkdir(parents=True, exist_ok=True)
-            for child in source.iterdir():
-                child_target = target / child.name
-                if child.is_dir():
-                    copy_tree(child, child_target)
-                else:
-                    child_target.write_bytes(child.read_bytes())
-
-        copy_tree(template, destination)
+        template = importlib.resources.files("just_init").joinpath("templates", "python")
+        with importlib.resources.as_file(template) as template_directory:
+            shutil.copytree(
+                template_directory,
+                destination,
+                ignore=shutil.ignore_patterns(
+                    "*.md",
+                    "*.json",
+                    "*.yaml",
+                    "*.yml",
+                    ".*",
+                    "LICENSE",
+                    "__pycache__",
+                    "*.pyc",
+                ),
+            )
 
     @staticmethod
     def _replace_placeholders(
@@ -155,3 +150,23 @@ class PythonProjectGenerator:
             for placeholder, replacement in replacements.items():
                 content = content.replace(placeholder, replacement)
             path.write_text(content, encoding="utf-8")
+
+    @staticmethod
+    def _prune_to_minimal(project_directory: Path, module_name: str) -> None:
+        keep_top_level = {"justfile", "pyproject.toml", "src"}
+        for child in project_directory.iterdir():
+            if child.name in keep_top_level:
+                continue
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+
+        src_directory = project_directory / "src"
+        for child in src_directory.iterdir():
+            if child.name == module_name:
+                continue
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
