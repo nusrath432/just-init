@@ -5,9 +5,9 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+
 from email_validator import EmailNotValidError, validate_email
-from just_init.generators import GENERATORS
-from just_init.generators.base import ProjectContext
+from just_init.generators.python import generate_python_project
 
 
 def resolve_value(value: str, label: str) -> str:
@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate a project with just-init.")
     subparsers = parser.add_subparsers(dest="command", required=True)
     init_parser = subparsers.add_parser("init", help="Generate a new project.")
-    init_parser.add_argument("language", choices=sorted(GENERATORS))
+    init_parser.add_argument("language", choices=["python"])
     init_parser.add_argument("project_name")
     init_parser.add_argument(
         "--output-dir",
@@ -61,18 +61,13 @@ def main() -> int:
     """Generate the requested project."""
     args = parse_args()
     try:
-        output_directory = args.output_dir.expanduser().resolve()
-        context = ProjectContext(
+        project_directory = generate_python_project(
             project_name=args.project_name,
-            output_directory=output_directory,
+            output_directory=args.output_dir.expanduser().resolve(),
             author=resolve_value(args.author, "Author name"),
             email=resolve_email(args.email),
-            github_username=resolve_value(
-                args.github_username,
-                "GitHub username or organization",
-            ),
+            github_username=resolve_value(args.github_username, "GitHub username or organization"),
         )
-        project_directory = GENERATORS[args.language].generate(context)
     except (RuntimeError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

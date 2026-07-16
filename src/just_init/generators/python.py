@@ -9,23 +9,14 @@ import re
 import shutil
 import subprocess
 import tempfile
-from collections.abc import Callable
 from pathlib import Path
 
-from just_init.generators.base import ProjectContext
-
-BootstrapRunner = Callable[[Path, ProjectContext], None]
-
-
-def bootstrap_python_project(
-    project_directory: Path,
-    context: ProjectContext,
-) -> None:
+def bootstrap_python_project(project_directory: Path, author: str, email: str) -> None:
     """Initialize a generated project with a minimal first commit."""
     commands = (
         ["git", "init", "--initial-branch=main"],
-        ["git", "config", "user.name", context.author],
-        ["git", "config", "user.email", context.email],
+        ["git", "config", "user.name", author],
+        ["git", "config", "user.email", email],
         ["git", "add", "--all"],
         [
             "git",
@@ -52,77 +43,42 @@ def bootstrap_python_project(
         ) from error
 
 
-class PythonProjectGenerator:
-    """Generate a complete modern Python project from packaged boilerplate."""
+def _normalize_name(value: str) -> tuple[str, str, str]:
+    distribution_name = re.sub(r"[^A-Za-z0-9]+", "-", value.strip()).strip("-").lower()
+    if not distribution_name:
+        raise ValueError("Project name must include at least one letter or number.")
 
-    language = "python"
-
-    def __init__(
-        self, bootstrap_runner: BootstrapRunner = bootstrap_python_project
-    ) -> None:
-        self._bootstrap_runner = bootstrap_runner
-
-    def generate(self, context: ProjectContext) -> Path:
-        """Create a project directory and generate its lockfile."""
-        distribution_name, module_name, title = self._normalize_name(
-            context.project_name
+    module_name = distribution_name.replace("-", "_")
+    if not module_name.isidentifier() or keyword.iskeyword(module_name):
+        raise ValueError(
+            f"Project name {value!r} becomes invalid import name {module_name!r}."
         )
-        output_directory = context.output_directory.resolve()
-        output_directory.mkdir(parents=True, exist_ok=True)
-        target = output_directory / distribution_name
-        if target.exists():
-            raise ValueError(f"Refusing to overwrite existing directory {target}.")
 
-        with tempfile.TemporaryDirectory(
-            prefix=".just-init-",
-            dir=output_directory,
-        ) as temporary_directory:
-            staged_project = Path(temporary_directory) / distribution_name
-            self._copy_template(staged_project)
-            self._replace_placeholders(
-                staged_project,
-                {
-                    "my-project": distribution_name,
-                    "my_project": module_name,
-                    "My Project": title,
-                    "Your Name": context.author,
-                    "your.email@example.com": context.email,
-                    "your-username": context.github_username,
-                },
-            )
-            (staged_project / "src" / "my_project").rename(
-                staged_project / "src" / module_name
-            )
-            self._prune_to_minimal(staged_project, module_name)
-            self._bootstrap_runner(staged_project, context)
-            staged_project.replace(target)
+    title = " ".join(part.capitalize() for part in distribution_name.split("-"))
+    return distribution_name, module_name, title
 
-        return target
 
-    @staticmethod
-    def _normalize_name(value: str) -> tuple[str, str, str]:
-        distribution_name = (
-            re.sub(r"[^A-Za-z0-9]+", "-", value.strip()).strip("-").lower()
-        )
-        if not distribution_name:
-            raise ValueError("Project name must include at least one letter or number.")
+def generate_python_project(
+    project_name: str,
+    output_directory: Path,
+    author: str,
+    email: str,
+    github_username: str,
+) -> Path:
+    distribution_name, module_name, title = _normalize_name(project_name)
+    output_directory = output_directory.resolve()
+    output_directory.mkdir(parents=True, exist_ok=True)
+    target = output_directory / distribution_name
+    if target.exists():
+        raise ValueError(f"Refusing to overwrite existing directory {target}.")
 
-        module_name = distribution_name.replace("-", "_")
-        if not module_name.isidentifier() or keyword.iskeyword(module_name):
-            raise ValueError(
-                f"Project name {value!r} becomes invalid import name {module_name!r}."
-            )
-
-        title = " ".join(part.capitalize() for part in distribution_name.split("-"))
-        return distribution_name, module_name, title
-
-    @staticmethod
-    def _copy_template(destination: Path) -> None:
-        template = importlib.resources.files("just_init").joinpath("templates", "python")
+    template = importlib.resources.files("just_init").joinpath("templates", "python")
+    with tempfile.TemporaryDirectory(prefix=".just-init-", dir=output_directory) as td:
+        staged_project = Path(td) / distribution_name
         with importlib.resources.as_file(template) as template_directory:
             shutil.copytree(
                 template_directory,
-                destination,
+                staged_project,
                 ignore=shutil.ignore_patterns(
                     "*.md",
                     "*.json",
@@ -135,38 +91,43 @@ class PythonProjectGenerator:
                 ),
             )
 
-    @staticmethod
-    def _replace_placeholders(
-        project_directory: Path, replacements: dict[str, str]
-    ) -> None:
-        for path in project_directory.rglob("*"):
+        replacements = {
+            "my-project": distribution_name,
+            "my_project": module_name,
+            "My Project": title,
+            "Your Name": author,
+            "your.email@example.com": email,
+            "your-username": github_username,
+        }
+        for path in staged_project.rglob("*"):
             if path.is_dir():
                 continue
             try:
                 content = path.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 continue
-
             for placeholder, replacement in replacements.items():
                 content = content.replace(placeholder, replacement)
             path.write_text(content, encoding="utf-8")
 
-    @staticmethod
-    def _prune_to_minimal(project_directory: Path, module_name: str) -> None:
-        keep_top_level = {"justfile", "pyproject.toml", "src"}
-        for child in project_directory.iterdir():
-            if child.name in keep_top_level:
-                continue
-            if child.is_dir():
-                shutil.rmtree(child)
-            else:
-                child.unlink()
+        (staged_project / "src" / "my_project").rename(staged_project / "src" / module_name)
 
-        src_directory = project_directory / "src"
-        for child in src_directory.iterdir():
-            if child.name == module_name:
-                continue
-            if child.is_dir():
-                shutil.rmtree(child)
-            else:
-                child.unlink()
+        keep_top_level = {"justfile", "pyproject.toml", "src"}
+        for child in staged_project.iterdir():
+            if child.name not in keep_top_level:
+                if child.is_dir():
+                    shutil.rmtree(child)
+                else:
+                    child.unlink()
+
+        for child in (staged_project / "src").iterdir():
+            if child.name != module_name:
+                if child.is_dir():
+                    shutil.rmtree(child)
+                else:
+                    child.unlink()
+
+        bootstrap_python_project(staged_project, author, email)
+        staged_project.replace(target)
+
+    return target
