@@ -4,11 +4,9 @@ default:
 
 
 # BEGIN TEMPLATE INITIALIZATION
-# Initialize project from template.
-# Uses current directory name if no project name is provided.
-init project_name="" author="" email="" github_username="":
-    uv run --python 3.13 --no-project python scripts/init_project.py {{quote(project_name)}} --author {{quote(author)}} --email {{quote(email)}} --github-username {{quote(github_username)}}
-    uv lock
+# Delegate project generation to just-init.
+init language project_name output_dir=".." author="" email="" github_username="":
+    uvx just-init init {{quote(language)}} {{quote(project_name)}} --output-dir {{quote(output_dir)}} --author {{quote(author)}} --email {{quote(email)}} --github-username {{quote(github_username)}}
 # END TEMPLATE INITIALIZATION
 
 
