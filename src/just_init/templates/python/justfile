@@ -1,0 +1,46 @@
+default:
+    @just --list
+
+install:
+    uv sync --locked --all-groups
+
+hooks:
+    uv run pre-commit install --install-hooks
+
+test:
+    uv run pytest --cov
+
+lint:
+    uv run ruff check .
+
+format:
+    uv run ruff format .
+
+format-check:
+    uv run ruff format --check .
+
+typecheck:
+    uv run pyright
+
+check:
+    just lint
+    just format-check
+    just typecheck
+    just test
+
+precommit:
+    uv run pre-commit run --all-files
+
+commit:
+    uv run cz commit
+
+build:
+    uv build
+
+clean:
+    find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+    find . -type d -name ".pytest_cache" -prune -exec rm -rf {} +
+    find . -type d -name ".ruff_cache" -prune -exec rm -rf {} +
+    find . -type d -name ".pyright" -prune -exec rm -rf {} +
+    find . -type d -name "*.egg-info" -prune -exec rm -rf {} +
+    rm -rf .coverage htmlcov build dist

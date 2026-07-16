@@ -1,0 +1,76 @@
+# Byte-compiled Python files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Native extensions
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.envrc
+
+# Packaging and build output
+build/
+dist/
+downloads/
+.eggs/
+*.egg-info/
+*.egg
+wheels/
+MANIFEST
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Static-analysis caches
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.pyre/
+.pytype/
+.dmypy.json
+dmypy.json
+
+# IDE and editor temporary files
+.idea/
+.vscode/*.log
+*.swp
+*.swo
+*~
+tempCodeRunnerFile.py
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Runtime output
+*.log
+*.pid
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Local application state
+instance/
+.cache/
