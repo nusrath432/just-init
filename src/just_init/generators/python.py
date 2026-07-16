@@ -38,6 +38,8 @@ def bootstrap_python_project(
         [
             "git",
             "commit",
+            "--allow-empty",
+            "--no-verify",
             "-m",
             f"chore: initialize {project_directory.name}",
         ],
@@ -50,6 +52,11 @@ def bootstrap_python_project(
     except FileNotFoundError as error:
         raise RuntimeError(
             f"{error.filename or 'Required command'} is required to generate a Python project."
+        ) from error
+    except subprocess.CalledProcessError as error:
+        command = " ".join(error.cmd) if isinstance(error.cmd, list) else str(error.cmd)
+        raise RuntimeError(
+            f"Command failed while bootstrapping project: {command}"
         ) from error
 
 

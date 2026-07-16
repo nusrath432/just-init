@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -115,5 +116,25 @@ def test_bootstrap_initializes_main_branch_and_runs_checks(
         ["uv", "run", "pyright"],
         ["uv", "run", "pytest", "--cov"],
         ["git", "add", "--all"],
-        ["git", "commit", "-m", "chore: initialize prism-proxy"],
+        [
+            "git",
+            "commit",
+            "--allow-empty",
+            "--no-verify",
+            "-m",
+            "chore: initialize prism-proxy",
+        ],
     ]
+
+
+def test_reports_bootstrap_command_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    def raise_called_process_error(*args: object, **kwargs: object) -> None:
+        raise subprocess.CalledProcessError(1, ["git", "commit", "-m", "msg"])
+
+    monkeypatch.setattr(python.subprocess, "run", raise_called_process_error)
+
+    with pytest.raises(RuntimeError, match="Command failed while bootstrapping"):
+        python.bootstrap_python_project(tmp_path, project_context(tmp_path))
