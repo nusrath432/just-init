@@ -1,46 +1,98 @@
+# List available commands
 default:
     @just --list
 
+
+# BEGIN TEMPLATE INITIALIZATION
+# Initialize project from template.
+# Uses current directory name if no project name is provided.
+init project_name="" author="" email="" github_username="":
+    uv run --python 3.13 --no-project python scripts/init_project.py {{quote(project_name)}} --author {{quote(author)}} --email {{quote(email)}} --github-username {{quote(github_username)}}
+    uv lock
+# END TEMPLATE INITIALIZATION
+
+
+# Install dependencies
 install:
     uv sync --locked --all-groups
 
+# Install git hooks
 hooks:
     uv run pre-commit install --install-hooks
 
+
+# Run tests
 test:
     uv run pytest --cov
 
+
+# Lint
 lint:
     uv run ruff check .
 
+
+# Format
 format:
     uv run ruff format .
 
+
+# Check formatting
 format-check:
     uv run ruff format --check .
 
+
+# Type check
 typecheck:
     uv run pyright
 
+
+# Run all checks
 check:
     just lint
     just format-check
     just typecheck
     just test
 
+
+# Run pre-commit manually
 precommit:
     uv run pre-commit run --all-files
 
+
+# Create conventional commit
 commit:
     uv run cz commit
 
+
+# Validate commit message
+commit-check:
+    uv run cz check --commit-msg-file .git/COMMIT_EDITMSG
+
+
+# Update dependencies
+update:
+    uv lock --upgrade
+
+
+# Build package
 build:
     uv build
 
+
+# Clean caches and build artifacts
 clean:
     find . -type d -name "__pycache__" -prune -exec rm -rf {} +
     find . -type d -name ".pytest_cache" -prune -exec rm -rf {} +
     find . -type d -name ".ruff_cache" -prune -exec rm -rf {} +
     find . -type d -name ".pyright" -prune -exec rm -rf {} +
+    rm -rf .coverage
+    rm -rf htmlcov
+    rm -rf build
+    rm -rf dist
     find . -type d -name "*.egg-info" -prune -exec rm -rf {} +
-    rm -rf .coverage htmlcov build dist
+
+
+# Full reset
+clean-all:
+    just clean
+    rm -rf .venv .coverage htmlcov build dist

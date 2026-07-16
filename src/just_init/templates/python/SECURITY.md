@@ -6,9 +6,6 @@ Security fixes are applied to the latest released version.
 
 ## Reporting a vulnerability
 
-Do not report vulnerabilities in public issues. Contact the maintainers
-privately at `your.email@example.com` with a description, affected versions,
-reproduction steps, and potential impact.
-
-The maintainers will acknowledge receipt and coordinate remediation privately.
-Please allow reasonable time for a fix before public disclosure.
+Do not report security vulnerabilities in public issues. Contact the project
+maintainers privately at `your.email@example.com` with details and steps to
+reproduce the issue.

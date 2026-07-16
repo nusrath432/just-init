@@ -1,4 +1,4 @@
-# Contributing to My Project
+# Contributing to the project
 
 ## Before you start
 
@@ -14,16 +14,18 @@ just install
 just hooks
 ```
 
-## Pull requests
+## Quality checks
 
-1. Create a focused branch from `main`.
-2. Add or update tests with behavior changes.
-3. Run `just check`.
-4. Use a Conventional Commit, such as `feat: add parser support`.
-5. Complete the pull-request template and address review feedback.
+Run the checks before opening a pull request:
 
-The commit-message hook validates messages, and `just commit` provides an
-interactive helper.
+```bash
+just check
+```
 
-Do not manually change versions, create release tags, or run `cz bump`. Release
-Please manages versions, `CHANGELOG.md`, release pull requests, and releases.
+Create feature branches and use Conventional Commits, such as
+`feat: add export command`. The commit-message hook validates the convention;
+`just commit` provides an interactive helper.
+
+Do not manually change project versions, create release tags, or run `cz bump`.
+Release Please owns version updates, `CHANGELOG.md`, release pull requests, and
+GitHub Releases after changes merge to `main`.
