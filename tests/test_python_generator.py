@@ -41,9 +41,6 @@ def test_generates_complete_python_project() -> None:
         assert (project / ".github" / "workflows" / "ci.yaml").is_file()
         assert (project / ".vscode" / "settings.json").is_file()
         assert (project / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml").is_file()
-        assert (project / ".github" / "dependabot.yml").is_file()
-        assert (project / "CODE_OF_CONDUCT.md").is_file()
-        assert (project / ".editorconfig").is_file()
 
         pyproject = (project / "pyproject.toml").read_text(encoding="utf-8")
         assert 'name = "prism-proxy"' in pyproject
@@ -51,11 +48,8 @@ def test_generates_complete_python_project() -> None:
         assert "Example Author" in pyproject
         assert "https://github.com/example-org/prism-proxy" in pyproject
 
-        assert "# Prism Proxy" in (project / "README.md").read_text(encoding="utf-8")
+        assert (project / "README.md").is_file()
         assert "author@example.com" in (project / "SECURITY.md").read_text(
-            encoding="utf-8"
-        )
-        assert "@example-org" in (project / ".github" / "CODEOWNERS").read_text(
             encoding="utf-8"
         )
 

@@ -45,7 +45,12 @@ def parse_args() -> argparse.Namespace:
     init_parser = subparsers.add_parser("init", help="Generate a new project.")
     init_parser.add_argument("language", choices=sorted(GENERATORS))
     init_parser.add_argument("project_name")
-    init_parser.add_argument("--output-dir", type=Path, default=Path.cwd())
+    init_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path(".."),
+        help="Project parent directory. Defaults to one level above the current directory.",
+    )
     init_parser.add_argument("--author", default="")
     init_parser.add_argument("--email", default="")
     init_parser.add_argument("--github-username", default="")
@@ -56,9 +61,10 @@ def main() -> int:
     """Generate the requested project."""
     args = parse_args()
     try:
+        output_directory = args.output_dir.expanduser().resolve()
         context = ProjectContext(
             project_name=args.project_name,
-            output_directory=args.output_dir,
+            output_directory=output_directory,
             author=resolve_value(args.author, "Author name"),
             email=resolve_email(args.email),
             github_username=resolve_value(

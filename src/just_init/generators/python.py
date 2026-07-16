@@ -42,10 +42,10 @@ def bootstrap_python_project(
             f"chore: initialize {project_directory.name}",
         ],
     )
+    env = os.environ.copy()
+    env.pop("VIRTUAL_ENV", None)
     try:
         for command in commands:
-            env = os.environ.copy()
-            env.pop("VIRTUAL_ENV", None)
             subprocess.run(command, cwd=project_directory, check=True, env=env)
     except FileNotFoundError as error:
         raise RuntimeError(
@@ -64,7 +64,7 @@ class PythonProjectGenerator:
         self._bootstrap_runner = bootstrap_runner
 
     def generate(self, context: ProjectContext) -> Path:
-        """Create a project in a new child directory and generate its lockfile."""
+        """Create a project directory and generate its lockfile."""
         distribution_name, module_name, title = self._normalize_name(
             context.project_name
         )

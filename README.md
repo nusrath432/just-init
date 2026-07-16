@@ -14,7 +14,7 @@ cd just-init
 just init python prism-proxy
 ```
 
-This creates `prism-proxy/` with the `prism_proxy` import package, generated
+This creates `../prism-proxy/` (one level above your current directory) with the `prism_proxy` import package, generated
 `uv.lock`, project-specific metadata, documentation, workflows, release
 configuration, and tests. It prompts for your name, email, and GitHub username
 one at a time; initializes Git with a `main` branch; installs dependencies and
@@ -37,7 +37,7 @@ just check
 
 | Command | Purpose |
 | --- | --- |
-| `just init python <name>` | Create a Python project in a new directory. |
+| `just init python <name>` | Create a Python project one level above the current directory by default. |
 | `just test` | Run generator tests with coverage. |
 | `just lint` | Run Ruff linting. |
 | `just format` | Apply Ruff formatting. |
